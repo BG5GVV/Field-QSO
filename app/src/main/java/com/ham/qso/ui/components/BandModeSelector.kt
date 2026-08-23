@@ -140,7 +140,10 @@ fun BandModeSelector(
                 label = "频率(MHz)",
                 value = frequencyMhz,
                 onValueChange = onFrequencyChanged,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                ),
                 modifier = Modifier.weight(1.2f)
             )
         }

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,14 +26,20 @@ import com.ham.qso.data.model.Band
 import com.ham.qso.data.model.Mode
 import com.ham.qso.data.model.QSOEntity
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun LogbookScreen(
     viewModel: LogbookViewModel,
@@ -42,6 +49,7 @@ fun LogbookScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // ADIF 文件导入选择器
     val adifPickerLauncher = rememberLauncherForActivityResult(
@@ -97,6 +105,7 @@ fun LogbookScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
+                .imePadding()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
                         focusManager.clearFocus()
@@ -156,6 +165,13 @@ fun LogbookScreen(
                     }
                 },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -231,7 +247,8 @@ fun LogbookScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .weight(1f),
+                        .weight(1f)
+                        .imeNestedScroll(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.qsoList, key = { it.id }) { qso ->
@@ -378,7 +395,12 @@ fun ViewQsoDetailDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text("时间: ${dateTimeFormat.format(Date(qso.timestampUtc))} UTC")
                 Text("波段/模式: ${qso.band.label} (${qso.frequencyMhz} MHz) / ${qso.mode.label}")
                 Text("信号报告 (RST): 发送 ${qso.rstSent} / 接收 ${qso.rstRcvd}")
@@ -423,6 +445,9 @@ fun EditQsoDialog(
     onDismiss: () -> Unit,
     onConfirm: (QSOEntity) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     var callsign by remember { mutableStateOf(qso.callsign) }
     var rstSent by remember { mutableStateOf(qso.rstSent) }
     var rstRcvd by remember { mutableStateOf(qso.rstRcvd) }
@@ -436,14 +461,26 @@ fun EditQsoDialog(
         title = { Text("编辑 QSO 记录") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedTextField(
                     value = callsign,
                     onValueChange = { callsign = it.uppercase() },
                     label = { Text("呼号") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Ascii,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -451,39 +488,80 @@ fun EditQsoDialog(
                         onValueChange = { rstSent = it },
                         label = { Text("RST Sent") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                     OutlinedTextField(
                         value = rstRcvd,
                         onValueChange = { rstRcvd = it },
                         label = { Text("RST Rcvd") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                 }
                 OutlinedTextField(
                     value = theirGrid,
                     onValueChange = { theirGrid = it.uppercase() },
                     label = { Text("对方网格") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Ascii,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
                 OutlinedTextField(
                     value = theirName,
                     onValueChange = { theirName = it },
                     label = { Text("对方姓名") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
                 OutlinedTextField(
                     value = qth,
                     onValueChange = { qth = it },
                     label = { Text("对方 QTH 地名") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
                     label = { Text("备注") },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
             }
         },

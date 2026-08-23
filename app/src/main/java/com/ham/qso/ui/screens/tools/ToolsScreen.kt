@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,19 +17,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import com.ham.qso.domain.model.QCodeItem
 import com.ham.qso.ui.components.AboutDialog
 import com.ham.qso.ui.theme.GridStyle
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ToolsScreen(
     viewModel: ToolsViewModel,
@@ -38,6 +42,7 @@ fun ToolsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     var showAboutDialog by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -70,6 +75,8 @@ fun ToolsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
+                .imePadding()
+                .imeNestedScroll()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
                         focusManager.clearFocus()
@@ -233,7 +240,16 @@ fun ToolsScreen(
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
                                 textStyle = GridStyle,
-                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Characters,
+                                    autoCorrect = false,
+                                    keyboardType = KeyboardType.Ascii,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(onDone = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                })
                             )
 
                             OutlinedTextField(
@@ -244,7 +260,16 @@ fun ToolsScreen(
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
                                 textStyle = GridStyle,
-                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.Characters,
+                                    autoCorrect = false,
+                                    keyboardType = KeyboardType.Ascii,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(onDone = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                })
                             )
                         }
 
@@ -338,6 +363,11 @@ fun ToolsScreen(
                         }
                     },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

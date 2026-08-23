@@ -146,7 +146,10 @@ class MainActivity : ComponentActivity() {
                     NavGraph(
                         navController = navController,
                         app = app,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .consumeWindowInsets(innerPadding)
                     )
                 }
 

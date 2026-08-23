@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,8 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +37,8 @@ fun GridCalculatorScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // GPS 权限请求
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -126,7 +133,14 @@ fun GridCalculatorScreen(
                             label = { Text("纬度 (Latitude)") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                         OutlinedTextField(
                             value = state.inputLon,
@@ -134,7 +148,14 @@ fun GridCalculatorScreen(
                             label = { Text("经度 (Longitude)") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                     }
 
@@ -210,14 +231,34 @@ fun GridCalculatorScreen(
                             onValueChange = { viewModel.onMyGridChange(it) },
                             label = { Text("我的网格 (Grid 1)") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                         OutlinedTextField(
                             value = state.inputTargetGrid,
                             onValueChange = { viewModel.onTargetGridChange(it) },
                             label = { Text("对方网格 (Grid 2)") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                     }
 

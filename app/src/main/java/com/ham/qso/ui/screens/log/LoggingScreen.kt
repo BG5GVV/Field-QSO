@@ -34,9 +34,11 @@ import com.ham.qso.ui.theme.GridStyle
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoggingScreen(
     viewModel: LoggingViewModel,
@@ -46,6 +48,7 @@ fun LoggingScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val callsignFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(uiState.saveSuccessMessage) {
         uiState.saveSuccessMessage?.let { msg ->
@@ -67,6 +70,7 @@ fun LoggingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
+                .imePadding()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
                         focusManager.clearFocus()
@@ -88,7 +92,8 @@ fun LoggingScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .imeNestedScroll(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // 1. 并列波段 (Band) + 模式 (Mode) + 频率 (MHz) 紧凑选择器
@@ -135,6 +140,8 @@ fun LoggingScreen(
                         },
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
                             imeAction = ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(
@@ -142,6 +149,8 @@ fun LoggingScreen(
                                 if (uiState.callsign.isNotBlank()) {
                                     viewModel.logQSO()
                                 }
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
                             }
                         )
                     )
@@ -222,7 +231,12 @@ fun LoggingScreen(
                                     onValueChange = { viewModel.onTheirGridChanged(it) },
                                     placeholder = "例如: PM95",
                                     textStyle = GridStyle.copy(fontSize = 15.sp),
-                                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                                    keyboardOptions = KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Characters,
+                                        autoCorrect = false,
+                                        keyboardType = KeyboardType.Ascii,
+                                        imeAction = ImeAction.Done
+                                    ),
                                     modifier = Modifier.weight(1f)
                                 )
                                 HamInputField(
@@ -230,6 +244,7 @@ fun LoggingScreen(
                                     value = uiState.theirName,
                                     onValueChange = { viewModel.onTheirNameChanged(it) },
                                     placeholder = "姓名/昵称",
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -239,6 +254,7 @@ fun LoggingScreen(
                                 value = uiState.qth,
                                 onValueChange = { viewModel.onQthChanged(it) },
                                 placeholder = "城市/景点/村落 (便于后期换算网格)",
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 modifier = Modifier.fillMaxWidth()
                             )
 
@@ -251,6 +267,7 @@ fun LoggingScreen(
                                     value = uiState.theirRig,
                                     onValueChange = { viewModel.onTheirRigChanged(it) },
                                     placeholder = "例如: IC-705",
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier.weight(1f)
                                 )
                                 HamInputField(
@@ -258,6 +275,7 @@ fun LoggingScreen(
                                     value = uiState.theirAntenna,
                                     onValueChange = { viewModel.onTheirAntennaChanged(it) },
                                     placeholder = "例如: EFHW / GP",
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -271,7 +289,10 @@ fun LoggingScreen(
                                     value = uiState.theirPowerWatts,
                                     onValueChange = { viewModel.onTheirPowerChanged(it) },
                                     placeholder = "例如: 10",
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Done
+                                    ),
                                     modifier = Modifier.weight(1f)
                                 )
                                 HamInputField(
@@ -279,7 +300,10 @@ fun LoggingScreen(
                                     value = uiState.altitudeMeters,
                                     onValueChange = { viewModel.onAltitudeChanged(it) },
                                     placeholder = "例如: 520",
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Done
+                                    ),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -289,6 +313,7 @@ fun LoggingScreen(
                                 value = uiState.comment,
                                 onValueChange = { viewModel.onCommentChanged(it) },
                                 placeholder = "户外通联备忘信息...",
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -338,7 +363,11 @@ fun LoggingScreen(
 
                 // 固定大按钮
                 Button(
-                    onClick = { viewModel.logQSO() },
+                    onClick = {
+                        viewModel.logQSO()
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    },
                     enabled = uiState.callsign.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()

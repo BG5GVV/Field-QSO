@@ -16,8 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,9 +50,37 @@ fun HamInputField(
     trailingIcon: @Composable (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     focusRequester: FocusRequester? = null,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
     keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
+    val effectiveKeyboardActions = KeyboardActions(
+        onDone = {
+            keyboardActions.onDone?.invoke(this)
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        },
+        onSearch = {
+            keyboardActions.onSearch?.invoke(this)
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        },
+        onSend = {
+            keyboardActions.onSend?.invoke(this)
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        },
+        onGo = {
+            keyboardActions.onGo?.invoke(this)
+            keyboardController?.hide()
+            focusManager.clearFocus()
+        },
+        onPrevious = keyboardActions.onPrevious,
+        onNext = keyboardActions.onNext
+    )
+
     val borderColor = if (isError) {
         MaterialTheme.colorScheme.error
     } else {
@@ -108,12 +145,23 @@ fun HamInputField(
                             onValueChange = onValueChange,
                             textStyle = textStyle.copy(color = textColor),
                             singleLine = true,
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             keyboardOptions = keyboardOptions,
-                            keyboardActions = keyboardActions,
+                            keyboardActions = effectiveKeyboardActions,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                                .onKeyEvent { keyEvent ->
+                                    if (keyEvent.type == KeyEventType.KeyUp &&
+                                        (keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter)
+                                    ) {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
                         )
                     }
                 }
@@ -126,3 +174,4 @@ fun HamInputField(
         }
     }
 }
+

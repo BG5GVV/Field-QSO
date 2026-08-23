@@ -4,12 +4,15 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ham.qso.data.model.Mode
@@ -29,6 +32,9 @@ fun RstPicker(
         else -> listOf("59", "58", "57", "55", "53", "44")
     }
 
+    val isDigital = mode in listOf(Mode.FT8, Mode.FT4, Mode.RTTY, Mode.PSK31)
+    val rstKeyboardType = if (isDigital) KeyboardType.Ascii else KeyboardType.Number
+
     Column(modifier = modifier.fillMaxWidth()) {
         // 两个 44dp 紧凑型信号报告输入框
         Row(
@@ -40,6 +46,10 @@ fun RstPicker(
                 label = "我给 (Sent)",
                 value = rstSent,
                 onValueChange = onRstSentChange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = rstKeyboardType,
+                    imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.weight(1f)
             )
 
@@ -48,6 +58,10 @@ fun RstPicker(
                 label = "对方给 (Rcvd)",
                 value = rstRcvd,
                 onValueChange = onRstRcvdChange,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = rstKeyboardType,
+                    imeAction = ImeAction.Done
+                ),
                 modifier = Modifier.weight(1f)
             )
         }

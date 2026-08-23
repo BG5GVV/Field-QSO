@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,15 +15,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
 import com.ham.qso.data.model.SessionEntity
 import com.ham.qso.ui.theme.GridStyle
 
@@ -327,6 +330,9 @@ fun CreateOrEditSessionDialog(
     onDismiss: () -> Unit,
     onSave: (name: String, call: String, grid: String, qth: String, pwr: Int, rig: String, ant: String, pota: String, sota: String, wwff: String, isCurrent: Boolean) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     var name by remember { mutableStateOf(session?.name ?: "") }
     var myCallsign by remember { mutableStateOf(session?.myCallsign ?: "") }
     var myGrid by remember { mutableStateOf(session?.myGrid ?: "") }
@@ -355,6 +361,11 @@ fun CreateOrEditSessionDialog(
                     label = { Text("架台活动名称 *") },
                     placeholder = { Text("例如: 莲花山 POTA CN-0123") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -366,7 +377,16 @@ fun CreateOrEditSessionDialog(
                         placeholder = { Text("例如: BH4XYZ") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                     OutlinedTextField(
                         value = myGrid,
@@ -376,7 +396,16 @@ fun CreateOrEditSessionDialog(
                         singleLine = true,
                         modifier = Modifier.weight(1f),
                         textStyle = GridStyle,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                 }
 
@@ -386,6 +415,11 @@ fun CreateOrEditSessionDialog(
                     label = { Text("我的 QTH 地点描述") },
                     placeholder = { Text("例如: 深圳市福田区莲花山山顶") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -396,7 +430,14 @@ fun CreateOrEditSessionDialog(
                         label = { Text("发射功率 (W)") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                     OutlinedTextField(
                         value = rigModel,
@@ -404,6 +445,11 @@ fun CreateOrEditSessionDialog(
                         label = { Text("电台型号") },
                         placeholder = { Text("IC-705 / FT-891") },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        }),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -414,6 +460,11 @@ fun CreateOrEditSessionDialog(
                     label = { Text("架设天线") },
                     placeholder = { Text("PAC-12 / 端馈天线 / 正V") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -425,7 +476,16 @@ fun CreateOrEditSessionDialog(
                         placeholder = { Text("CN-0123") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                     OutlinedTextField(
                         value = sotaRef,
@@ -434,7 +494,16 @@ fun CreateOrEditSessionDialog(
                         placeholder = { Text("BV/NW-001") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
                 }
 
@@ -444,7 +513,16 @@ fun CreateOrEditSessionDialog(
                     label = { Text("WWFF/BOTA 编号") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        autoCorrect = false,
+                        keyboardType = KeyboardType.Ascii,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    })
                 )
 
                 if (session == null) {

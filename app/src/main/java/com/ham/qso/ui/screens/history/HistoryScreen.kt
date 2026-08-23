@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,7 +19,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +41,8 @@ fun HistoryScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     var showExportMenu by remember { mutableStateOf(false) }
 
     // ADIF 文件选择器
@@ -138,6 +145,7 @@ fun HistoryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
+                .imePadding()
         ) {
             // ── 提示信息 ──
             if (state.exportSuccessMessage != null) {
@@ -183,6 +191,13 @@ fun HistoryScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                ),
                 shape = RoundedCornerShape(12.dp)
             )
 
@@ -297,21 +312,38 @@ fun HistoryScreen(
                             onValueChange = { viewModel.onEditCallsignChange(it) },
                             label = { Text("呼号") },
                             modifier = Modifier.weight(1.4f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                         OutlinedTextField(
                             value = state.editRstSent,
                             onValueChange = { viewModel.onEditRstSentChange(it) },
                             label = { Text("Sent") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                         OutlinedTextField(
                             value = state.editRstRcvd,
                             onValueChange = { viewModel.onEditRstRcvdChange(it) },
                             label = { Text("Rcvd") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                     }
 
@@ -348,7 +380,14 @@ fun HistoryScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters,
+                            autoCorrect = false,
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                     )
 
                     // 对方姓名与 QTH 地点
@@ -361,14 +400,18 @@ fun HistoryScreen(
                             onValueChange = { viewModel.onEditTheirNameChange(it) },
                             label = { Text("对方姓名") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                         OutlinedTextField(
                             value = state.editQth,
                             onValueChange = { viewModel.onEditQthChange(it) },
                             label = { Text("QTH 地点") },
                             modifier = Modifier.weight(1.5f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                     }
 
@@ -383,7 +426,8 @@ fun HistoryScreen(
                             label = { Text("海拔 (m)") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                         OutlinedTextField(
                             value = state.editTheirPowerWatts,
@@ -391,7 +435,8 @@ fun HistoryScreen(
                             label = { Text("功率 (W)") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                     }
 
@@ -405,14 +450,18 @@ fun HistoryScreen(
                             onValueChange = { viewModel.onEditTheirRigChange(it) },
                             label = { Text("对方设备") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                         OutlinedTextField(
                             value = state.editTheirAntenna,
                             onValueChange = { viewModel.onEditTheirAntennaChange(it) },
                             label = { Text("对方天线") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                         )
                     }
 
@@ -422,7 +471,9 @@ fun HistoryScreen(
                         onValueChange = { viewModel.onEditCommentChange(it) },
                         label = { Text("备注 (Comment)") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { keyboardController?.hide(); focusManager.clearFocus() })
                     )
                 }
             },

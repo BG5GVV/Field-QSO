@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -13,7 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +34,8 @@ fun SessionListScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Scaffold(
         topBar = {
@@ -113,7 +120,12 @@ fun SessionListScreen(
                         label = { Text("会话名称 *") },
                         placeholder = { Text("如: 莲花山野台, POTA CN-0123...") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
 
                     Row(
@@ -126,7 +138,17 @@ fun SessionListScreen(
                             label = { Text("我的呼号") },
                             placeholder = { Text("如: BH4XXX") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                         OutlinedTextField(
                             value = state.formMyGrid,
@@ -134,7 +156,17 @@ fun SessionListScreen(
                             label = { Text("我的网格") },
                             placeholder = { Text("如: OL72ab") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                     }
 
@@ -144,7 +176,12 @@ fun SessionListScreen(
                         label = { Text("我的 QTH 地点描述") },
                         placeholder = { Text("如: 广东深圳南山") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
 
                     Row(
@@ -157,7 +194,14 @@ fun SessionListScreen(
                             label = { Text("发射功率 (W)") },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                         OutlinedTextField(
                             value = state.formRig,
@@ -165,7 +209,12 @@ fun SessionListScreen(
                             label = { Text("电台型号") },
                             placeholder = { Text("如: FT-891") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                     }
 
@@ -175,7 +224,12 @@ fun SessionListScreen(
                         label = { Text("天线配置") },
                         placeholder = { Text("如: 7-50MHz 正V, 7m端馈") },
                         modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                        })
                     )
 
                     Row(
@@ -188,7 +242,17 @@ fun SessionListScreen(
                             label = { Text("POTA 编号") },
                             placeholder = { Text("如: CN-0123") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                         OutlinedTextField(
                             value = state.formSota,
@@ -196,7 +260,17 @@ fun SessionListScreen(
                             label = { Text("SOTA 编号") },
                             placeholder = { Text("如: BV/TP-001") },
                             modifier = Modifier.weight(1f),
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Characters,
+                                autoCorrect = false,
+                                keyboardType = KeyboardType.Ascii,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            })
                         )
                     }
                 }

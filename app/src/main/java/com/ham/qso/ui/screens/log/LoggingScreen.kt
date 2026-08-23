@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LoggingScreen(
     viewModel: LoggingViewModel,
@@ -92,8 +91,7 @@ fun LoggingScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-                    .imeNestedScroll(),
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // 1. 并列波段 (Band) + 模式 (Mode) + 频率 (MHz) 紧凑选择器

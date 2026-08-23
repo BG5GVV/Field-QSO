@@ -32,7 +32,7 @@ import com.ham.qso.domain.model.QCodeItem
 import com.ham.qso.ui.components.AboutDialog
 import com.ham.qso.ui.theme.GridStyle
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolsScreen(
     viewModel: ToolsViewModel,
@@ -76,7 +76,6 @@ fun ToolsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
                 .imePadding()
-                .imeNestedScroll()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = {
                         focusManager.clearFocus()

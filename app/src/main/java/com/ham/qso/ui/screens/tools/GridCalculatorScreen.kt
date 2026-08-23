@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
+import com.ham.qso.ui.components.AntennaCompassView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -269,36 +270,44 @@ fun GridCalculatorScreen(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceAround,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("大圆距离 (Great Circle)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    text = if (state.calculatedDistanceKm != null) "%.1f km".format(state.calculatedDistanceKm) else "--",
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = MaterialTheme.colorScheme.primary
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("大圆距离 (Great Circle)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        text = if (state.calculatedDistanceKm != null) "%.1f km".format(state.calculatedDistanceKm) else "--",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     )
-                                )
-                            }
-                            VerticalDivider(modifier = Modifier.height(36.dp))
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("天线指向角 (Azimuth)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    text = if (state.calculatedBearingDeg != null) "%.1f°".format(state.calculatedBearingDeg) else "--",
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = MaterialTheme.colorScheme.secondary
+                                }
+                                VerticalDivider(modifier = Modifier.height(36.dp))
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text("天线指向角 (Azimuth)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        text = if (state.calculatedBearingDeg != null) "%.1f°".format(state.calculatedBearingDeg) else "--",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
                                     )
-                                )
+                                }
                             }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // ── 硬件电子罗盘与天线指向射线 ──
+                            AntennaCompassView(
+                                targetAzimuth = state.calculatedBearingDeg,
+                                targetGrid = state.inputTargetGrid
+                            )
                         }
                     }
                 }

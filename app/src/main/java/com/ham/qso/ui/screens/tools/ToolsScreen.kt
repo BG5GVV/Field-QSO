@@ -30,6 +30,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import com.ham.qso.domain.model.QCodeItem
 import com.ham.qso.ui.components.AboutDialog
+import com.ham.qso.ui.components.AntennaCompassView
 import com.ham.qso.ui.theme.GridStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -327,11 +328,27 @@ fun ToolsScreen(
                                     }
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // ── 硬件电子罗盘与天线指向射线 ──
+                            AntennaCompassView(
+                                targetAzimuth = uiState.bearingDeg,
+                                targetGrid = uiState.calcToGrid
+                            )
                         } else {
                             Text(
                                 text = "请输入正确的 4 位或 6 位梅登黑德网格（如 OL72 或 OL72ab）",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // 默认通用罗盘视图
+                            AntennaCompassView(
+                                targetAzimuth = null,
+                                targetGrid = null
                             )
                         }
                     }

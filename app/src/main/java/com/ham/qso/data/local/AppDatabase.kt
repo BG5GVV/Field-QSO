@@ -16,7 +16,7 @@ import com.ham.qso.data.model.SessionEntity
  */
 @Database(
     entities = [QSOEntity::class, SessionEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

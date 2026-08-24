@@ -78,5 +78,11 @@ data class QSOEntity(
     val myGrid: String = "",
     val potaRef: String = "",
     val sotaRef: String = "",
-    val txPowerWatts: Int = 100
+    val txPowerWatts: Int = 100,
+
+    // ── 通联录音与声音轨迹锚点 ──────────────────────────────────
+    /** 录音文件绝对路径（如果开启了录音） */
+    val audioFilePath: String? = null,
+    /** 该条通联在录音中的毫秒偏移量（用于精确定位回听） */
+    val audioOffsetMs: Long? = null
 )

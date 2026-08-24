@@ -33,6 +33,7 @@ import com.ham.qso.ui.theme.CallsignStyle
 import com.ham.qso.ui.theme.GridStyle
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import java.text.SimpleDateFormat
@@ -43,7 +44,9 @@ fun LoggingScreen(
     viewModel: LoggingViewModel,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val recordingState by viewModel.recordingState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val callsignFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -94,7 +97,17 @@ fun LoggingScreen(
                 uniqueCallCount = uiState.uniqueCallCount
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // ── 通联录音随行控制胶囊条 ──
+            RecordingStatusCapsule(
+                recState = recordingState,
+                onStart = { viewModel.startAudioRecording(context) },
+                onStop = { viewModel.stopAudioRecording(context) },
+                onMark = { viewModel.triggerAudioMark(context) }
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             // ── 2. 中间自适应滚动操作区 (Scrollable Content, weight=1f) ───────────
             LazyColumn(
@@ -154,7 +167,7 @@ fun LoggingScreen(
                         keyboardActions = KeyboardActions(
                             onDone = {
                                 if (uiState.callsign.isNotBlank()) {
-                                    viewModel.logQSO()
+                                    viewModel.logQSO(context)
                                 }
                                 keyboardController?.hide()
                                 focusManager.clearFocus()
@@ -452,6 +465,15 @@ fun RecentQsoChip(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            if (qso.audioFilePath != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Default.GraphicEq,
+                    contentDescription = "含录音",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(6.dp))
             Icon(
                 imageVector = Icons.Default.Edit,
@@ -459,6 +481,90 @@ fun RecentQsoChip(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(13.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun RecordingStatusCapsule(
+    recState: com.ham.qso.service.QsoAudioRecordingState,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onMark: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val totalSec = recState.durationMs / 1000
+    val mm = totalSec / 60
+    val ss = totalSec % 60
+    val timeFormatted = "%02d:%02d".format(mm, ss)
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = if (recState.isRecording) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        border = if (recState.isRecording) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (recState.isRecording) Icons.Default.Mic else Icons.Default.MicNone,
+                    contentDescription = null,
+                    tint = if (recState.isRecording) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                if (recState.isRecording) {
+                    Text(
+                        text = "🔴 录音中 $timeFormatted · 锚点: ${recState.markerCount}",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        text = "通联录音未开启 (回车可自动记录声音轨迹)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (recState.isRecording) {
+                    FilledTonalButton(
+                        onClick = onMark,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Text("＋打点", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Button(
+                        onClick = onStop,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Text("结束", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    FilledTonalButton(
+                        onClick = onStart,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.FiberManualRecord, contentDescription = null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("开启录音", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
     }
 }

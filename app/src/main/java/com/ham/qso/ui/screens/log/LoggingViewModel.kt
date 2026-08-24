@@ -1,5 +1,6 @@
 package com.ham.qso.ui.screens.log
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ham.qso.data.model.Band
@@ -7,6 +8,8 @@ import com.ham.qso.data.model.Mode
 import com.ham.qso.data.model.QSOEntity
 import com.ham.qso.data.model.SessionEntity
 import com.ham.qso.data.repository.QSORepository
+import com.ham.qso.service.QsoAudioRecorderService
+import com.ham.qso.service.QsoAudioRecordingState
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -41,6 +44,9 @@ data class LoggingUiState(
 class LoggingViewModel(
     private val repository: QSORepository
 ) : ViewModel() {
+
+    val recordingState: StateFlow<QsoAudioRecordingState> =
+        QsoAudioRecorderService.recordingState
 
     private val _uiState = MutableStateFlow(LoggingUiState())
     val uiState: StateFlow<LoggingUiState> = _uiState.asStateFlow()
@@ -87,6 +93,19 @@ class LoggingViewModel(
         }
     }
 
+    fun startAudioRecording(context: Context) {
+        val sessionName = _uiState.value.currentSession?.name ?: "FieldQSO"
+        QsoAudioRecorderService.start(context, sessionName)
+    }
+
+    fun stopAudioRecording(context: Context) {
+        QsoAudioRecorderService.stop(context)
+    }
+
+    fun triggerAudioMark(context: Context) {
+        QsoAudioRecorderService.mark(context)
+    }
+
     fun onCallsignChanged(callsign: String) {
         // 自动大写并过滤非法字符
         val sanitized = callsign.uppercase().filter { it.isLetterOrDigit() || it == '/' }
@@ -103,18 +122,7 @@ class LoggingViewModel(
     }
 
     fun onModeChanged(mode: Mode) {
-        val defaultRst = when (mode) {
-            Mode.CW -> "599"
-            Mode.FT8, Mode.FT4, Mode.RTTY, Mode.PSK31 -> "-10"
-            else -> "59"
-        }
-        _uiState.update {
-            it.copy(
-                mode = mode,
-                rstSent = defaultRst,
-                rstRcvd = defaultRst
-            )
-        }
+        _uiState.update { it.copy(mode = mode) }
     }
 
     fun onFrequencyChanged(freq: String) = _uiState.update { it.copy(frequencyMhz = freq) }
@@ -123,10 +131,10 @@ class LoggingViewModel(
     fun onTheirGridChanged(grid: String) = _uiState.update { it.copy(theirGrid = grid.uppercase().trim()) }
     fun onTheirNameChanged(name: String) = _uiState.update { it.copy(theirName = name) }
     fun onQthChanged(qth: String) = _uiState.update { it.copy(qth = qth) }
-    fun onAltitudeChanged(alt: String) = _uiState.update { it.copy(altitudeMeters = alt) }
+    fun onAltitudeChanged(alt: String) = _uiState.update { it.copy(altitudeMeters = alt.filter { c -> c.isDigit() || c == '-' }) }
     fun onTheirRigChanged(rig: String) = _uiState.update { it.copy(theirRig = rig) }
     fun onTheirAntennaChanged(antenna: String) = _uiState.update { it.copy(theirAntenna = antenna) }
-    fun onTheirPowerChanged(pwr: String) = _uiState.update { it.copy(theirPowerWatts = pwr) }
+    fun onTheirPowerChanged(pwr: String) = _uiState.update { it.copy(theirPowerWatts = pwr.filter { c -> c.isDigit() }) }
     fun onCommentChanged(comment: String) = _uiState.update { it.copy(comment = comment) }
     fun toggleAdvancedFields() = _uiState.update { it.copy(showAdvancedFields = !it.showAdvancedFields) }
     fun dismissSuccessMessage() = _uiState.update { it.copy(saveSuccessMessage = null) }
@@ -152,7 +160,7 @@ class LoggingViewModel(
         }
     }
 
-    fun logQSO() {
+    fun logQSO(context: Context? = null) {
         val state = _uiState.value
         val call = state.callsign.trim()
         if (call.isBlank()) return
@@ -170,6 +178,10 @@ class LoggingViewModel(
             }
 
             val session = repository.getCurrentSessionDirect()
+            val recState = QsoAudioRecorderService.recordingState.value
+
+            val audioPath = if (recState.isRecording && recState.filePath.isNotBlank()) recState.filePath else null
+            val audioOffset = if (recState.isRecording) recState.durationMs else null
 
             val freq = state.frequencyMhz.toDoubleOrNull() ?: state.band.frequencyMhz
             val qso = QSOEntity(
@@ -193,11 +205,18 @@ class LoggingViewModel(
                 myGrid = session?.myGrid ?: "",
                 potaRef = session?.potaRef ?: "",
                 sotaRef = session?.sotaRef ?: "",
-                txPowerWatts = session?.txPowerWatts ?: 100
+                txPowerWatts = session?.txPowerWatts ?: 100,
+                audioFilePath = audioPath,
+                audioOffsetMs = audioOffset
             )
 
             val newId = repository.insertQSO(qso)
             val insertedQso = qso.copy(id = newId)
+
+            // 如果正在录音，自动打点并触觉反馈
+            if (recState.isRecording && context != null) {
+                QsoAudioRecorderService.mark(context)
+            }
 
             // 极速录入重置：清空对方临时字段，保留波段/模式/频率/RST
             _uiState.update {

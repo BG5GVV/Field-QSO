@@ -3,10 +3,14 @@ package com.ham.qso.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
@@ -80,6 +84,42 @@ fun QSOCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (qso.audioFilePath != null && qso.audioOffsetMs != null) {
+                        val playerManager = com.ham.qso.domain.audio.AudioPlayerManager.getInstance(androidx.compose.ui.platform.LocalContext.current)
+                        val playerState by playerManager.playerState.collectAsState()
+                        val isPlayingThis = playerState.isPlaying && playerState.activeQsoId == qso.id
+
+                        FilledTonalButton(
+                            onClick = {
+                                if (isPlayingThis) {
+                                    playerManager.playPause()
+                                } else {
+                                    playerManager.playQsoAudio(qso.id, qso.audioFilePath, qso.audioOffsetMs)
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(28.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isPlayingThis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Icon(
+                                imageVector = if (isPlayingThis) Icons.Default.Pause else Icons.AutoMirrored.Filled.VolumeUp,
+                                contentDescription = "听录音",
+                                modifier = Modifier.size(14.dp),
+                                tint = if (isPlayingThis) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isPlayingThis) "暂停" else "听录音",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isPlayingThis) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+
                     IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Default.Edit,

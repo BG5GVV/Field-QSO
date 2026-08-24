@@ -323,17 +323,46 @@ fun QsoCardItem(
                     fontFamily = FontFamily.Monospace
                 )
 
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Text(
-                        text = "${qso.band.label} · ${qso.mode.label}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (qso.audioFilePath != null) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.GraphicEq,
+                                    contentDescription = "录音",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "录音",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = "${qso.band.label} · ${qso.mode.label}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
 
@@ -379,6 +408,7 @@ fun ViewQsoDetailDialog(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val dateTimeFormat = remember {
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
@@ -401,6 +431,38 @@ fun ViewQsoDetailDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                if (qso.audioFilePath != null && qso.audioOffsetMs != null) {
+                    val playerManager = com.ham.qso.domain.audio.AudioPlayerManager.getInstance(context)
+                    val playerState by playerManager.playerState.collectAsState()
+                    val isPlayingThis = playerState.isPlaying && playerState.activeQsoId == qso.id
+
+                    Button(
+                        onClick = {
+                            if (isPlayingThis) {
+                                playerManager.playPause()
+                            } else {
+                                playerManager.playQsoAudio(qso.id, qso.audioFilePath, qso.audioOffsetMs)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isPlayingThis) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isPlayingThis) Icons.Default.Pause else Icons.Default.VolumeUp,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isPlayingThis) "暂停通联录音回放" else "▶ 播放通联录音 (前置 3 秒)",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
                 Text("时间: ${dateTimeFormat.format(Date(qso.timestampUtc))} UTC")
                 Text("波段/模式: ${qso.band.label} (${qso.frequencyMhz} MHz) / ${qso.mode.label}")
                 Text("信号报告 (RST): 发送 ${qso.rstSent} / 接收 ${qso.rstRcvd}")

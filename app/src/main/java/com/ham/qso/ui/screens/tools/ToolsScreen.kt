@@ -93,10 +93,110 @@ fun ToolsScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "GPS 梅登黑德网格定位、两地天线大圆方位角测算与常用 Q 简语速查",
+                    text = "GPS 梅登黑德网格定位、天线方位角测算、通联录音与常用 Q 简语速查",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            // 0. 通联录音与声音轨迹伴侣
+            item {
+                val recState by com.ham.qso.service.QsoAudioRecorderService.recordingState.collectAsState()
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (recState.isRecording) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (recState.isRecording) Icons.Default.Mic else Icons.Default.MicNone,
+                                    contentDescription = null,
+                                    tint = if (recState.isRecording) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "通联录音与声音轨迹引擎",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (recState.isRecording) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = if (recState.isRecording) "正在录音" else "待机",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (recState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (recState.isRecording) {
+                            val totalSec = recState.durationMs / 1000
+                            val mm = totalSec / 60
+                            val ss = totalSec % 60
+                            val timeStr = "%02d:%02d".format(mm, ss)
+                            Text(
+                                text = "录音中 · 已录制: $timeStr · 标记打点: ${recState.markerCount} 次",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilledTonalButton(
+                                    onClick = { com.ham.qso.service.QsoAudioRecorderService.mark(context) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(imageVector = Icons.Default.BookmarkBorder, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("＋标记打点")
+                                }
+                                Button(
+                                    onClick = { com.ham.qso.service.QsoAudioRecorderService.stop(context) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("结束录音")
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "采用 Android 15 前台麦克风长录音服务，录音期间录入 QSO 自动生成时间锚点，回听时自动前置 3 秒播放。",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = { com.ham.qso.service.QsoAudioRecorderService.start(context, "FieldQSO") },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(imageVector = Icons.Default.FiberManualRecord, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("开启通联声音轨迹录音")
+                            }
+                        }
+                    }
+                }
             }
 
             // 1. GPS 网格定位换算卡片

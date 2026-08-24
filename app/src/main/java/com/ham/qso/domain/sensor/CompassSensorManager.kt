@@ -45,6 +45,7 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     private var hasGravity = false
     private var hasGeomagnetic = false
 
+    private var currentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     private var currentAzimuth = 0f
     private var listener: ((CompassState) -> Unit)? = null
 
@@ -75,6 +76,10 @@ class CompassSensorManager(context: Context) : SensorEventListener {
 
         var rawAzimuth: Float? = null
 
+        if (event.accuracy != 0 || event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+            currentAccuracy = event.accuracy
+        }
+
         if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
             SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
             SensorManager.getOrientation(rotationMatrix, orientationAngles)
@@ -104,7 +109,7 @@ class CompassSensorManager(context: Context) : SensorEventListener {
             listener?.invoke(
                 CompassState(
                     azimuth = currentAzimuth,
-                    accuracy = event.accuracy,
+                    accuracy = currentAccuracy,
                     isSupported = true,
                     cardinalDirection = cardinal
                 )
@@ -113,7 +118,15 @@ class CompassSensorManager(context: Context) : SensorEventListener {
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // 精度变动处理
+        currentAccuracy = accuracy
+        listener?.invoke(
+            CompassState(
+                azimuth = currentAzimuth,
+                accuracy = currentAccuracy,
+                isSupported = true,
+                cardinalDirection = getCardinalDirection(currentAzimuth)
+            )
+        )
     }
 
     /**
@@ -139,6 +152,16 @@ class CompassSensorManager(context: Context) : SensorEventListener {
                 deg in 247.5f..292.5f -> "西 W"
                 deg in 292.5f..337.5f -> "西北 NW"
                 else -> "北 N"
+            }
+        }
+
+        fun getAccuracyLabel(accuracy: Int): String {
+            return when (accuracy) {
+                SensorManager.SENSOR_STATUS_ACCURACY_HIGH -> "极佳 (HIGH)"
+                SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM -> "良好 (MEDIUM)"
+                SensorManager.SENSOR_STATUS_ACCURACY_LOW -> "偏低 (LOW)"
+                SensorManager.SENSOR_STATUS_UNRELIABLE -> "不可靠 (UNRELIABLE)"
+                else -> "检测中"
             }
         }
     }

@@ -51,7 +51,16 @@ fun LoggingScreen(
 
     LaunchedEffect(uiState.saveSuccessMessage) {
         uiState.saveSuccessMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
+            val result = snackbarHostState.showSnackbar(
+                message = msg,
+                actionLabel = "修改更多详情",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                uiState.lastLoggedQso?.let { q ->
+                    viewModel.onEditQso(q)
+                }
+            }
             viewModel.dismissSuccessMessage()
         }
     }
@@ -335,7 +344,10 @@ fun LoggingScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(uiState.recentQSOs, key = { it.id }) { qso ->
-                                RecentQsoChip(qso = qso)
+                                RecentQsoChip(
+                                    qso = qso,
+                                    onClick = { viewModel.onEditQso(qso) }
+                                )
                             }
                         }
                     }
@@ -383,6 +395,15 @@ fun LoggingScreen(
             }
         }
 
+        // 详情/编辑弹窗
+        uiState.editingQso?.let { qso ->
+            EditQsoDialog(
+                qso = qso,
+                onDismiss = { viewModel.onEditQso(null) },
+                onConfirm = { updated -> viewModel.updateQso(updated) }
+            )
+        }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -391,36 +412,52 @@ fun LoggingScreen(
 }
 
 @Composable
-fun RecentQsoChip(qso: QSOEntity) {
+fun RecentQsoChip(
+    qso: QSOEntity,
+    onClick: () -> Unit
+) {
     val timeFormat = remember {
         SimpleDateFormat("HH:mm", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
     }
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = 1.dp
     ) {
-        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = qso.callsign,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${qso.band.label} ${qso.mode.label}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Text(
-                    text = qso.callsign,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "${qso.band.label} ${qso.mode.label}",
+                    text = "${timeFormat.format(Date(qso.timestampUtc))} UTC · S:${qso.rstSent} R:${qso.rstRcvd}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                text = "${timeFormat.format(Date(qso.timestampUtc))} UTC · S:${qso.rstSent} R:${qso.rstRcvd}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.width(6.dp))
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "修改信息",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(13.dp)
             )
         }
     }

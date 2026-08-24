@@ -138,66 +138,16 @@ class HistoryViewModel(
     // ── 编辑 QSO 对话框交互 ──────────────────────────────────
 
     fun openEditDialog(qso: QSOEntity) {
-        _uiState.update {
-            it.copy(
-                editingQSO = qso,
-                editCallsign = qso.callsign,
-                editRstSent = qso.rstSent,
-                editRstRcvd = qso.rstRcvd,
-                editBand = qso.band,
-                editMode = qso.mode,
-                editTheirGrid = qso.theirGrid,
-                editTheirName = qso.theirName,
-                editQth = qso.qth,
-                editAltitudeMeters = qso.altitudeMeters?.toString() ?: "",
-                editTheirRig = qso.theirRig,
-                editTheirAntenna = qso.theirAntenna,
-                editTheirPowerWatts = qso.theirPowerWatts?.toString() ?: "",
-                editComment = qso.comment
-            )
-        }
+        _uiState.update { it.copy(editingQSO = qso) }
     }
 
     fun dismissEditDialog() {
         _uiState.update { it.copy(editingQSO = null) }
     }
 
-    fun onEditCallsignChange(value: String) = _uiState.update { it.copy(editCallsign = value.uppercase().trim()) }
-    fun onEditRstSentChange(value: String) = _uiState.update { it.copy(editRstSent = value) }
-    fun onEditRstRcvdChange(value: String) = _uiState.update { it.copy(editRstRcvd = value) }
-    fun onEditBandChange(band: Band) = _uiState.update { it.copy(editBand = band) }
-    fun onEditModeChange(mode: Mode) = _uiState.update { it.copy(editMode = mode) }
-    fun onEditTheirGridChange(value: String) = _uiState.update { it.copy(editTheirGrid = value.uppercase().trim()) }
-    fun onEditTheirNameChange(value: String) = _uiState.update { it.copy(editTheirName = value) }
-    fun onEditQthChange(value: String) = _uiState.update { it.copy(editQth = value) }
-    fun onEditAltitudeChange(value: String) = _uiState.update { it.copy(editAltitudeMeters = value.filter { c -> c.isDigit() || c == '-' }) }
-    fun onEditTheirRigChange(value: String) = _uiState.update { it.copy(editTheirRig = value) }
-    fun onEditTheirAntennaChange(value: String) = _uiState.update { it.copy(editTheirAntenna = value) }
-    fun onEditTheirPowerChange(value: String) = _uiState.update { it.copy(editTheirPowerWatts = value.filter { c -> c.isDigit() }) }
-    fun onEditCommentChange(value: String) = _uiState.update { it.copy(editComment = value) }
-
-    fun saveEditedQSO() {
-        val s = _uiState.value
-        val original = s.editingQSO ?: return
-
-        val updated = original.copy(
-            callsign = s.editCallsign.ifBlank { original.callsign },
-            rstSent = s.editRstSent,
-            rstRcvd = s.editRstRcvd,
-            band = s.editBand,
-            mode = s.editMode,
-            theirGrid = s.editTheirGrid,
-            theirName = s.editTheirName,
-            qth = s.editQth,
-            altitudeMeters = s.editAltitudeMeters.toIntOrNull(),
-            theirRig = s.editTheirRig,
-            theirAntenna = s.editTheirAntenna,
-            theirPowerWatts = s.editTheirPowerWatts.toIntOrNull(),
-            comment = s.editComment
-        )
-
+    fun updateQSO(qso: QSOEntity) {
         viewModelScope.launch {
-            repository.updateQSO(updated)
+            repository.updateQSO(qso)
             _uiState.update { it.copy(editingQSO = null) }
         }
     }

@@ -29,6 +29,8 @@ data class LoggingUiState(
     val comment: String = "",
     val isDuplicate: Boolean = false,
     val recentQSOs: List<QSOEntity> = emptyList(),
+    val editingQso: QSOEntity? = null,
+    val lastLoggedQso: QSOEntity? = null,
     val totalQsoCount: Int = 0,
     val uniqueCallCount: Int = 0,
     val showAdvancedFields: Boolean = false,
@@ -129,6 +131,27 @@ class LoggingViewModel(
     fun toggleAdvancedFields() = _uiState.update { it.copy(showAdvancedFields = !it.showAdvancedFields) }
     fun dismissSuccessMessage() = _uiState.update { it.copy(saveSuccessMessage = null) }
 
+    fun onEditQso(qso: QSOEntity?) = _uiState.update { it.copy(editingQso = qso) }
+
+    fun updateQso(qso: QSOEntity) {
+        viewModelScope.launch {
+            repository.updateQSO(qso)
+            _uiState.update {
+                it.copy(
+                    editingQso = null,
+                    saveSuccessMessage = "已更新 QSO: ${qso.callsign}"
+                )
+            }
+        }
+    }
+
+    fun deleteQso(qso: QSOEntity) {
+        viewModelScope.launch {
+            repository.deleteQSO(qso)
+            _uiState.update { it.copy(editingQso = null) }
+        }
+    }
+
     fun logQSO() {
         val state = _uiState.value
         val call = state.callsign.trim()
@@ -173,7 +196,8 @@ class LoggingViewModel(
                 txPowerWatts = session?.txPowerWatts ?: 100
             )
 
-            repository.insertQSO(qso)
+            val newId = repository.insertQSO(qso)
+            val insertedQso = qso.copy(id = newId)
 
             // 极速录入重置：清空对方临时字段，保留波段/模式/频率/RST
             _uiState.update {
@@ -188,6 +212,7 @@ class LoggingViewModel(
                     theirPowerWatts = "",
                     comment = "",
                     isDuplicate = false,
+                    lastLoggedQso = insertedQso,
                     saveSuccessMessage = "已成功记录 QSO: $call (${state.band.label} ${state.mode.label})"
                 )
             }

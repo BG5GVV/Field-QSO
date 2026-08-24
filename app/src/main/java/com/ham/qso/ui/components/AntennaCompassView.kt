@@ -2,6 +2,7 @@ package com.ham.qso.ui.components
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.hardware.SensorManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -9,14 +10,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material.icons.filled.SensorsOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,6 +55,7 @@ fun AntennaCompassView(
 ) {
     val compassState = rememberCompassState()
     val haptic = LocalHapticFeedback.current
+    var showCalibrationSheet by remember { mutableStateOf(false) }
 
     // 计算设备当前朝向与天线目标角度的相对差角 (-180° ~ +180°)
     val deltaAngle = remember(compassState.azimuth, targetAzimuth) {
@@ -84,11 +84,20 @@ fun AntennaCompassView(
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
+    val isLowAccuracy = compassState.isSupported && compassState.accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW
+
     val ringBorderColor by animateColorAsState(
         targetValue = if (isAligned) alignedColor else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
         animationSpec = tween(300),
         label = "ringBorderColor"
     )
+
+    if (showCalibrationSheet) {
+        CompassCalibrationBottomSheet(
+            compassState = compassState,
+            onDismissRequest = { showCalibrationSheet = false }
+        )
+    }
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -108,46 +117,93 @@ fun AntennaCompassView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Default.Explore,
                         contentDescription = null,
                         tint = if (isAligned) alignedColor else primaryColor,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(19.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "天线波束方位角瞄准罗盘",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        text = "天线波束瞄准",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1
                     )
                 }
 
-                if (!compassState.isSupported) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (compassState.isSupported) {
+                        Surface(
+                            onClick = { showCalibrationSheet = true },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isLowAccuracy) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            border = BorderStroke(1.dp, if (isLowAccuracy) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                            modifier = Modifier.height(28.dp)
                         ) {
-                            Icon(Icons.Default.SensorsOff, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("无地磁传感器 (静态图示)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onErrorContainer)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (isLowAccuracy) Icons.Default.WarningAmber else Icons.Default.ScreenRotation,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp),
+                                    tint = if (isLowAccuracy) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isLowAccuracy) "需校准" else "校准",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isLowAccuracy) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
-                } else if (targetAzimuth != null) {
-                    Surface(
-                        color = if (isAligned) alignedColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = if (isAligned) "★ 已对准目标波束 ★" else "目标指向: %.1f°".format(targetAzimuth),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isAligned) alignedColor else MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
+
+                    if (!compassState.isSupported) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.SensorsOff, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.error)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("无地磁传感器", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onErrorContainer, maxLines = 1)
+                            }
+                        }
+                    } else if (targetAzimuth != null) {
+                        Surface(
+                            color = if (isAligned) alignedColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (isAligned) "★ 已对准 ★" else "目标: %.1f°".format(targetAzimuth),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isAligned) alignedColor else MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                        }
                     }
                 }
             }

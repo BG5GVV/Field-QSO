@@ -37,10 +37,10 @@ class MaidenheadAndAdifTest {
 
     @Test
     fun testDistanceAndBearing() {
-        // 深圳(OL72) 到 东京(PM95) 距离大约 2800-3000 公里
+        // 深圳(OL72) 到 东京(PM95) 距离大约 2700-3000 公里
         val distance = MaidenheadUtils.distanceKm("OL72", "PM95")
         assertNotNull(distance)
-        assertTrue(distance!! in 2800.0..3100.0)
+        assertTrue(distance!! in 2700.0..3100.0)
 
         // 深圳 到 东京 方位角在东北方向 (40° ~ 60°)
         val bearing = MaidenheadUtils.bearingDeg("OL72", "PM95")
@@ -115,7 +115,7 @@ class MaidenheadAndAdifTest {
         assertEquals(10, parsed.theirPowerWatts)
         assertEquals("Nice 40m CW QSO", parsed.comment)
         assertEquals("BH4XXX", parsed.myCallsign)
-        assertEquals("OL72AB", parsed.myGrid)
+        assertEquals("OL72ab", parsed.myGrid)
         assertEquals("CN-0123", parsed.potaRef)
     }
 

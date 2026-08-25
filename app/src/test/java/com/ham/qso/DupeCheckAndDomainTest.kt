@@ -36,4 +36,15 @@ class DupeCheckAndDomainTest {
         assertEquals(100, qso.txPowerWatts)
         assertEquals("BH4XYZ", qso.callsign)
     }
+
+    @Test
+    fun testBandAndModeDefaults() {
+        assertEquals("40m", Band.BAND_40M.label)
+        assertEquals(7.050, Band.BAND_40M.frequencyMhz, 0.001)
+        assertEquals("20m", Band.BAND_20M.label)
+        assertEquals(14.200, Band.BAND_20M.frequencyMhz, 0.001)
+        assertEquals("SSB", Mode.SSB.label)
+        assertEquals("CW", Mode.CW.label)
+        assertEquals("FT8", Mode.FT8.label)
+    }
 }

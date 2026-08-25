@@ -1,8 +1,10 @@
 package com.ham.qso.data.repository
 
+import com.ham.qso.data.local.AppPreferences
 import com.ham.qso.data.local.QSODao
 import com.ham.qso.data.local.SessionDao
 import com.ham.qso.data.model.Band
+import com.ham.qso.data.model.Mode
 import com.ham.qso.data.model.QSOEntity
 import com.ham.qso.data.model.SessionEntity
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +14,28 @@ import kotlinx.coroutines.flow.Flow
  */
 class QSORepository(
     private val qsoDao: QSODao,
-    private val sessionDao: SessionDao
+    private val sessionDao: SessionDao,
+    private val appPreferences: AppPreferences? = null
 ) {
+    // ── Preferences ─────────────────────────────────────────────
+    fun getLastBand(): Band = appPreferences?.lastBand ?: Band.BAND_40M
+
+    fun saveLastBand(band: Band) {
+        appPreferences?.lastBand = band
+    }
+
+    fun getLastMode(): Mode = appPreferences?.lastMode ?: Mode.SSB
+
+    fun saveLastMode(mode: Mode) {
+        appPreferences?.lastMode = mode
+    }
+
+    fun getLastFrequencyMhz(): String =
+        appPreferences?.lastFrequencyMhz ?: "%.3f".format(getLastBand().frequencyMhz)
+
+    fun saveLastFrequencyMhz(freq: String) {
+        appPreferences?.lastFrequencyMhz = freq
+    }
     // ── Session ─────────────────────────────────────────────────
     val allSessions: Flow<List<SessionEntity>> = sessionDao.getAllSessions()
     val currentSession: Flow<SessionEntity?> = sessionDao.getCurrentSession()

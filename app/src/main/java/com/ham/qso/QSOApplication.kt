@@ -13,10 +13,15 @@ class QSOApplication : Application() {
         AppDatabase.getInstance(this)
     }
 
+    val appPreferences: com.ham.qso.data.local.AppPreferences by lazy {
+        com.ham.qso.data.local.AppPreferences(this)
+    }
+
     val repository: QSORepository by lazy {
         QSORepository(
             qsoDao = database.qsoDao(),
-            sessionDao = database.sessionDao()
+            sessionDao = database.sessionDao(),
+            appPreferences = appPreferences
         )
     }
 

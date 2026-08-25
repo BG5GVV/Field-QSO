@@ -48,7 +48,13 @@ class LoggingViewModel(
     val recordingState: StateFlow<QsoAudioRecordingState> =
         QsoAudioRecorderService.recordingState
 
-    private val _uiState = MutableStateFlow(LoggingUiState())
+    private val _uiState = MutableStateFlow(
+        LoggingUiState(
+            band = repository.getLastBand(),
+            mode = repository.getLastMode(),
+            frequencyMhz = repository.getLastFrequencyMhz()
+        )
+    )
     val uiState: StateFlow<LoggingUiState> = _uiState.asStateFlow()
 
     init {
@@ -113,19 +119,26 @@ class LoggingViewModel(
     }
 
     fun onBandChanged(band: Band) {
+        val newFreq = "%.3f".format(band.frequencyMhz)
+        repository.saveLastBand(band)
+        repository.saveLastFrequencyMhz(newFreq)
         _uiState.update {
             it.copy(
                 band = band,
-                frequencyMhz = "%.3f".format(band.frequencyMhz)
+                frequencyMhz = newFreq
             )
         }
     }
 
     fun onModeChanged(mode: Mode) {
+        repository.saveLastMode(mode)
         _uiState.update { it.copy(mode = mode) }
     }
 
-    fun onFrequencyChanged(freq: String) = _uiState.update { it.copy(frequencyMhz = freq) }
+    fun onFrequencyChanged(freq: String) {
+        repository.saveLastFrequencyMhz(freq)
+        _uiState.update { it.copy(frequencyMhz = freq) }
+    }
     fun onRstSentChanged(rst: String) = _uiState.update { it.copy(rstSent = rst) }
     fun onRstRcvdChanged(rst: String) = _uiState.update { it.copy(rstRcvd = rst) }
     fun onTheirGridChanged(grid: String) = _uiState.update { it.copy(theirGrid = grid.uppercase().trim()) }
@@ -217,6 +230,11 @@ class LoggingViewModel(
             if (recState.isRecording && context != null) {
                 QsoAudioRecorderService.mark(context)
             }
+
+            // 持久化保存最后通联使用的波段、模式、频率
+            repository.saveLastBand(state.band)
+            repository.saveLastMode(state.mode)
+            repository.saveLastFrequencyMhz(state.frequencyMhz)
 
             // 极速录入重置：清空对方临时字段，保留波段/模式/频率/RST
             _uiState.update {

@@ -48,4 +48,13 @@ interface QSODao {
 
     @Query("SELECT COUNT(DISTINCT callsign) FROM qso_logs WHERE sessionId = :sessionId")
     fun getUniqueCallCountForSession(sessionId: Long): Flow<Int>
+
+    @Query("SELECT DISTINCT audioFilePath FROM qso_logs WHERE audioFilePath IS NOT NULL AND audioFilePath != ''")
+    fun getAllAudioFilePaths(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT audioFilePath FROM qso_logs WHERE audioFilePath IS NOT NULL AND audioFilePath != ''")
+    suspend fun getAllAudioFilePathsDirect(): List<String>
+
+    @Query("SELECT COUNT(*) FROM qso_logs WHERE audioFilePath = :filePath")
+    suspend fun countQsoUsingAudioFile(filePath: String): Int
 }

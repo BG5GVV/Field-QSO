@@ -59,4 +59,10 @@ class QSORepository(
 
     fun getUniqueCallCountForSession(sessionId: Long): Flow<Int> =
         qsoDao.getUniqueCallCountForSession(sessionId)
+
+    fun getAllAudioFilePaths(): Flow<List<String>> = qsoDao.getAllAudioFilePaths()
+
+    suspend fun getAllAudioFilePathsDirect(): List<String> = qsoDao.getAllAudioFilePathsDirect()
+
+    suspend fun countQsoUsingAudioFile(filePath: String): Int = qsoDao.countQsoUsingAudioFile(filePath)
 }

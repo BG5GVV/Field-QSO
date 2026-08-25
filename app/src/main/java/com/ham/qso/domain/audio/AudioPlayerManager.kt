@@ -73,6 +73,33 @@ class AudioPlayerManager(private val context: Context) {
         )
     }
 
+    fun playRecordingFile(filePath: String, startOffsetMs: Long = 0L) {
+        val file = File(filePath)
+        if (!file.exists()) {
+            _playerState.value = _playerState.value.copy(
+                errorMessage = "录音文件不存在或已删除"
+            )
+            return
+        }
+
+        val player = exoPlayer ?: return
+        val targetOffsetMs = maxOf(0L, startOffsetMs)
+
+        val mediaItem = MediaItem.fromUri(file.toURI().toString())
+        player.setMediaItem(mediaItem)
+        player.prepare()
+        player.seekTo(targetOffsetMs)
+        player.play()
+
+        _playerState.value = _playerState.value.copy(
+            activeQsoId = -1L,
+            currentFilePath = filePath,
+            currentPositionMs = targetOffsetMs,
+            isPlaying = true,
+            errorMessage = null
+        )
+    }
+
     fun playPause() {
         val player = exoPlayer ?: return
         if (player.isPlaying) {

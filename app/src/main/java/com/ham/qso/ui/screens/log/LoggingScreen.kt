@@ -1,5 +1,11 @@
 package com.ham.qso.ui.screens.log
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -27,6 +33,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.ham.qso.data.model.QSOEntity
 import com.ham.qso.ui.components.*
 import com.ham.qso.ui.theme.CallsignStyle
@@ -51,6 +59,62 @@ fun LoggingScreen(
     val callsignFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // ── 录音与通知权限管理 ──
+    val audioPermissions = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            arrayOf(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    var showAudioRationaleDialog by remember { mutableStateOf(false) }
+    var showSettingsGuideDialog by remember { mutableStateOf(false) }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val audioGranted = permissions[Manifest.permission.RECORD_AUDIO] == true
+        if (audioGranted) {
+            viewModel.startAudioRecording(context)
+        } else {
+            val activity = context as? Activity
+            val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.RECORD_AUDIO)
+            } ?: false
+            if (!showRationale) {
+                showSettingsGuideDialog = true
+            }
+        }
+    }
+
+    fun handleStartRecording() {
+        val hasAudio = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasNotif = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        if (hasAudio && hasNotif) {
+            viewModel.startAudioRecording(context)
+        } else {
+            val activity = context as? Activity
+            val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.RECORD_AUDIO)
+            } ?: false
+
+            if (showRationale) {
+                showAudioRationaleDialog = true
+            } else {
+                audioPermissionLauncher.launch(audioPermissions)
+            }
+        }
+    }
 
     LaunchedEffect(uiState.saveSuccessMessage) {
         uiState.saveSuccessMessage?.let { msg ->
@@ -102,7 +166,7 @@ fun LoggingScreen(
             // ── 通联录音随行控制胶囊条 ──
             RecordingStatusCapsule(
                 recState = recordingState,
-                onStart = { viewModel.startAudioRecording(context) },
+                onStart = { handleStartRecording() },
                 onStop = { viewModel.stopAudioRecording(context) },
                 onMark = { viewModel.triggerAudioMark(context) }
             )
@@ -414,6 +478,26 @@ fun LoggingScreen(
                 qso = qso,
                 onDismiss = { viewModel.onEditQso(null) },
                 onConfirm = { updated -> viewModel.updateQso(updated) }
+            )
+        }
+
+        // 录音与通知权限理由解释弹窗
+        if (showAudioRationaleDialog) {
+            AudioPermissionRationaleDialog(
+                onConfirm = {
+                    showAudioRationaleDialog = false
+                    audioPermissionLauncher.launch(audioPermissions)
+                },
+                onDismiss = { showAudioRationaleDialog = false }
+            )
+        }
+
+        // 永久拒绝时设置引导弹窗
+        if (showSettingsGuideDialog) {
+            PermissionSettingsGuideDialog(
+                title = "需要开启麦克风录音权限",
+                message = "Field QSO 无法获取麦克风权限。请在系统应用详情设置中手动允许“麦克风”与“通知”权限，以在户外通联时记录声音轨迹。",
+                onDismiss = { showSettingsGuideDialog = false }
             )
         }
 

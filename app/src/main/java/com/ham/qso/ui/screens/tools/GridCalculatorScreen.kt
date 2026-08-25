@@ -1,6 +1,7 @@
 package com.ham.qso.ui.screens.tools
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,9 +27,12 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.ham.qso.ui.components.AntennaCompassView
+import com.ham.qso.ui.components.LocationPermissionRationaleDialog
+import com.ham.qso.ui.components.PermissionSettingsGuideDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +46,12 @@ fun GridCalculatorScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     // GPS 权限请求
+    val locationPermissions = remember {
+        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
+    var showLocationRationaleDialog by remember { mutableStateOf(false) }
+    var showLocationSettingsGuideDialog by remember { mutableStateOf(false) }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -57,6 +67,38 @@ fun GridCalculatorScreen(
                 }
             } catch (e: SecurityException) {
                 // Ignore
+            }
+        } else {
+            val activity = context as? Activity
+            val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+            } ?: false
+            if (!showRationale) {
+                showLocationSettingsGuideDialog = true
+            }
+        }
+    }
+
+    fun requestGpsLocation() {
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (hasFine || hasCoarse) {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    if (loc != null) viewModel.setCoordinates(loc.latitude, loc.longitude)
+                }
+            } catch (e: SecurityException) {}
+        } else {
+            val activity = context as? Activity
+            val showRationale = activity?.let {
+                ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+            } ?: false
+
+            if (showRationale) {
+                showLocationRationaleDialog = true
+            } else {
+                locationPermissionLauncher.launch(locationPermissions)
             }
         }
     }
@@ -101,22 +143,7 @@ fun GridCalculatorScreen(
                         }
 
                         IconButton(
-                            onClick = {
-                                val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                if (hasFine || hasCoarse) {
-                                    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                                    try {
-                                        fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
-                                            if (loc != null) viewModel.setCoordinates(loc.latitude, loc.longitude)
-                                        }
-                                    } catch (e: SecurityException) {}
-                                } else {
-                                    locationPermissionLauncher.launch(
-                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                    )
-                                }
-                            }
+                            onClick = { requestGpsLocation() }
                         ) {
                             Icon(Icons.Default.GpsFixed, contentDescription = "获取当前GPS", tint = MaterialTheme.colorScheme.primary)
                         }
@@ -372,6 +399,26 @@ fun GridCalculatorScreen(
             }
 
             Spacer(modifier = Modifier.height(70.dp))
+        }
+
+        // GPS 权限理由解释弹窗
+        if (showLocationRationaleDialog) {
+            LocationPermissionRationaleDialog(
+                onConfirm = {
+                    showLocationRationaleDialog = false
+                    locationPermissionLauncher.launch(locationPermissions)
+                },
+                onDismiss = { showLocationRationaleDialog = false }
+            )
+        }
+
+        // GPS 设置引导弹窗
+        if (showLocationSettingsGuideDialog) {
+            PermissionSettingsGuideDialog(
+                title = "需要开启精确定位权限",
+                message = "Field QSO 无法获取系统定位。请在系统应用详情设置中手动允许“位置信息”权限，以便自动换算梅登黑德网格定位符。",
+                onDismiss = { showLocationSettingsGuideDialog = false }
+            )
         }
     }
 }

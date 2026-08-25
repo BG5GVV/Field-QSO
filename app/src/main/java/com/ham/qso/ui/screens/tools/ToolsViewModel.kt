@@ -6,11 +6,13 @@ import android.location.Location
 import android.location.LocationManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.LocationServices
 import com.ham.qso.data.repository.QSORepository
+import com.ham.qso.domain.audio.RecordingFileInfo
+import com.ham.qso.domain.audio.RecordingManager
 import com.ham.qso.domain.model.QCodeData
 import com.ham.qso.domain.model.QCodeItem
 import com.ham.qso.domain.utils.MaidenheadUtils
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +39,15 @@ data class ToolsUiState(
     val qCodeQuery: String = "",
     val qCodeResults: List<QCodeItem> = QCodeData.qCodes,
 
+    // 录音文件全生命周期管理
+    val recordings: List<RecordingFileInfo> = emptyList(),
+    val totalStorageBytes: Long = 0,
+    val totalStorageFormatted: String = "0 B",
+    val orphanCount: Int = 0,
+    val isScanningRecordings: Boolean = false,
+    val deleteConfirmTarget: RecordingFileInfo? = null,
+    val showCleanOrphansDialog: Boolean = false,
+
     val infoMessage: String? = null
 )
 
@@ -51,6 +62,86 @@ class ToolsViewModel(
         // 自动计算初始示例网格
         recalculateDistanceAndBearing("OL72ab", "PM95")
     }
+
+    // ── 录音文件管理 ─────────────────────────────────────────────
+
+    fun loadRecordings(context: Context) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isScanningRecordings = true) }
+            val activePaths = repository.getAllAudioFilePathsDirect().toSet()
+            val pathCountMap = mutableMapOf<String, Int>()
+            for (path in activePaths) {
+                pathCountMap[path] = repository.countQsoUsingAudioFile(path)
+            }
+            val list = RecordingManager.scanRecordings(context, activePaths, pathCountMap)
+            val totalBytes = RecordingManager.getTotalStorageBytes(list)
+            val orphans = list.count { it.isOrphan }
+            _uiState.update {
+                it.copy(
+                    recordings = list,
+                    totalStorageBytes = totalBytes,
+                    totalStorageFormatted = RecordingManager.formatBytes(totalBytes),
+                    orphanCount = orphans,
+                    isScanningRecordings = false
+                )
+            }
+        }
+    }
+
+    fun requestDeleteRecording(item: RecordingFileInfo) {
+        _uiState.update { it.copy(deleteConfirmTarget = item) }
+    }
+
+    fun dismissDeleteDialog() {
+        _uiState.update { it.copy(deleteConfirmTarget = null) }
+    }
+
+    fun confirmDeleteRecording(context: Context) {
+        val target = _uiState.value.deleteConfirmTarget ?: return
+        val success = RecordingManager.deleteRecording(target.file)
+        if (success) {
+            _uiState.update {
+                it.copy(
+                    deleteConfirmTarget = null,
+                    infoMessage = "已删除录音文件: ${target.fileName}"
+                )
+            }
+            loadRecordings(context)
+        } else {
+            _uiState.update {
+                it.copy(
+                    deleteConfirmTarget = null,
+                    infoMessage = "删除失败，文件可能正被系统占用"
+                )
+            }
+        }
+    }
+
+    fun requestCleanOrphans() {
+        _uiState.update { it.copy(showCleanOrphansDialog = true) }
+    }
+
+    fun dismissCleanOrphansDialog() {
+        _uiState.update { it.copy(showCleanOrphansDialog = false) }
+    }
+
+    fun confirmCleanOrphans(context: Context) {
+        val list = _uiState.value.recordings
+        val count = RecordingManager.deleteOrphanRecordings(list)
+        _uiState.update {
+            it.copy(
+                showCleanOrphansDialog = false,
+                infoMessage = "已成功清理 $count 个无关联孤儿录音文件"
+            )
+        }
+        loadRecordings(context)
+    }
+
+    fun shareRecording(context: Context, item: RecordingFileInfo) {
+        RecordingManager.shareRecording(context, item.file)
+    }
+
+    // ── GPS 定位与网格计算 ────────────────────────────────────────
 
     @SuppressLint("MissingPermission")
     fun requestCurrentLocation(context: Context) {

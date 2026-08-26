@@ -109,13 +109,9 @@ fun ToolsScreen(
         }
     }
 
-    // ── 2. 录音权限管理 ──
+    // ── 2. 录音权限管理 (Android 16 专属原生) ──
     val audioPermissions = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            arrayOf(Manifest.permission.RECORD_AUDIO)
-        }
+        arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
     }
     var showAudioRationaleDialog by remember { mutableStateOf(false) }
     var showAudioSettingsGuideDialog by remember { mutableStateOf(false) }
@@ -142,12 +138,10 @@ fun ToolsScreen(
             context,
             Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
-        val hasNotif = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else true
+        val hasNotif = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
 
         if (hasAudio && hasNotif) {
             QsoAudioRecorderService.start(context, "FieldQSO")

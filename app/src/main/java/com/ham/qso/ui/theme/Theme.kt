@@ -110,7 +110,7 @@ fun FieldQSOTheme(
         AppThemeMode.DARK -> DarkColorScheme
         AppThemeMode.LIGHT -> LightColorScheme
         AppThemeMode.SYSTEM -> {
-            if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (dynamicColor) {
                 if (systemInDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             } else {
                 if (systemInDark) DarkColorScheme else LightColorScheme

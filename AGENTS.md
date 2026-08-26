@@ -2,6 +2,7 @@
 
 ## 🛠️ Build & Environment Guidelines
 - **Java / JDK**: Java 25 (`Java 25.0.3`).
+- **Target OS / SDK**: **Android 16** (`compileSdk = 36`, `targetSdk = 36`, `minSdk = 36` 专属).
 - **Gradle Version**: **Gradle 9.7.0** (required for Java 25 compatibility).
 - **Gradle Wrapper**: Always use `.\gradlew.bat` in the root directory (configured with Gradle 9.7.0).
 - **Gradle 9.7.0 Direct Path**: `C:\Users\FrankChan\.gradle\wrapper\dists\gradle-9.7.0-bin\d4tj7w02tcgubx9zk9hbippn6\gradle-9.7.0\bin\gradle.bat`

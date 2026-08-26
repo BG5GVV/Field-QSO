@@ -10,7 +10,10 @@
 
 专为业余无线电爱好者（HAM）打造的现代化野外架台 / POTA / SOTA / 通联比赛快速记录 Android 原生应用。采用现代 **Jetpack Compose + Material Design 3** 构建，深度适配 **Android 16 (API 36)** 平台特性与 **Java 25** 运行环境。
 
-> 💡 **AI 代码驱动开发 (AI-Driven Development)**：本项目核心架构、UI 交互流、传感器算法与 ADIF 编解码引擎均基于 **Google Antigravity & Gemini** 进行 AI 全流程代码驱动构建（Vibe Coding），体现了现代 AI 与 Android 原生原生技术的深度融合。
+> [!IMPORTANT]
+> **系统要求**：本项目专为 **Android 16 (API 36)** 平台打造（`minSdk = 36`）。在低于 Android 16 的系统上安装时，系统包管理器会提示“解析错误”或拒绝安装（`INSTALL_FAILED_OLDER_SDK`）。
+
+> 💡 **AI 代码驱动开发 (AI-Driven Development)**：本项目核心架构、UI 交互流、传感器算法与 ADIF 编解码引擎均基于 **Google Antigravity & Gemini** 进行 AI 全流程代码驱动构建（Vibe Coding），体现了现代 AI 与 Android 原生技术的深度融合。
 
 ---
 

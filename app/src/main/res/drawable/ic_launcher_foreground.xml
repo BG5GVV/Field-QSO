@@ -1,0 +1,37 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Radio Tower & Radio Waves -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M54,28 A4,4 0 1,0 54,36 A4,4 0 1,0 54,28 Z" />
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,36 L54,80 M44,80 L54,42 L64,80 M40,65 L68,65 M47,52 L61,52" />
+    <!-- Left Waves -->
+    <path
+        android:strokeColor="#FFAB00"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M43,26 C38,29 38,35 43,38" />
+    <path
+        android:strokeColor="#FFAB00"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M35,20 C27,27 27,37 35,44" />
+    <!-- Right Waves -->
+    <path
+        android:strokeColor="#FFAB00"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M65,26 C70,29 70,35 65,38" />
+    <path
+        android:strokeColor="#FFAB00"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M73,20 C81,27 81,37 73,44" />
+</vector>

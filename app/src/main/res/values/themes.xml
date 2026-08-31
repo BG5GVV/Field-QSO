@@ -1,0 +1,4 @@
+<resources>
+    <!-- Base application theme - transparent, Compose handles all theming -->
+    <style name="Theme.FieldQSO" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
